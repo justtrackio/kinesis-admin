@@ -1,0 +1,27 @@
+{
+  "name": "kinesis-admin-frontend",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "bunx vite",
+    "build": "bunx vite build",
+    "preview": "bunx vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "antd": "^5.19.0",
+    "@tanstack/react-query": "^5.55.4",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/node": "^20.12.12",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.0.0"
+  },
+  "packageManager": "bun@latest"
+}
