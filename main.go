@@ -19,8 +19,13 @@ var configDist []byte
 var frontend embed.FS
 
 func main() {
-	application.Run(
+	application.New(
+		application.WithConfigDebug,
 		application.WithConfigBytes(configDist, "yml"),
+		application.WithConfigEnvKeyReplacer(cfg.DefaultEnvKeyReplacer),
+		application.WithConfigSanitizers(cfg.TimeSanitizer),
+		application.WithLoggerHandlersFromConfig,
+		application.WithUTCClock(true),
 		application.WithModuleFactory("http", httpserver.NewServer("default", func(ctx context.Context, config cfg.Config, logger log.Logger, router *httpserver.Router) error {
 			router.Use(cors.Default())
 			router.UseFactory(httpserver.CreateEmbeddedStaticServe(frontend, "frontend/dist", "/api"))
@@ -35,5 +40,5 @@ func main() {
 
 			return nil
 		})),
-	)
+	).Run()
 }
