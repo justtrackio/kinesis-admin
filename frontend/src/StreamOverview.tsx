@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Typography, Descriptions, Spin, Alert, Table, Form, Input, Button, notification, Popconfirm, message } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { apiBaseUrl } from './config';
+import { getApiBaseUrl } from './config';
 
 interface Props { name: string; }
 interface StreamDescription {
@@ -27,13 +27,13 @@ interface StreamMessagesResponse {
 }
 
 const fetchDescription = async (name: string): Promise<StreamDescription> => {
-  const res = await fetch(`${apiBaseUrl}/stream/describe?streamName=${encodeURIComponent(name)}`);
+  const res = await fetch(`${getApiBaseUrl()}/stream/describe?streamName=${encodeURIComponent(name)}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 };
 
 const fetchMessages = async (name: string): Promise<StreamMessagesResponse> => {
-  const res = await fetch(`${apiBaseUrl}/stream/messages?streamName=${encodeURIComponent(name)}&limit=40`);
+  const res = await fetch(`${getApiBaseUrl()}/stream/messages?streamName=${encodeURIComponent(name)}&limit=40`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 };
@@ -57,7 +57,7 @@ export const StreamOverview: React.FC<Props> = ({ name }) => {
 
   const deleteMutation = useMutation<{ status: string; stream: string }, Error, string>({
     mutationFn: async (streamName: string) => {
-      const res = await fetch(`${apiBaseUrl}/stream`, {
+      const res = await fetch(`${getApiBaseUrl()}/stream`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ streamName }),
@@ -142,7 +142,7 @@ const PublishMessageForm: React.FC<{ streamArn: string; streamName: string }> = 
 
   const mutation = useMutation<unknown, Error, PublishFormValues>({
     mutationFn: (values) => {
-      return fetch(`${apiBaseUrl}/stream/message`, {
+      return fetch(`${getApiBaseUrl()}/stream/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...values, streamArn }),

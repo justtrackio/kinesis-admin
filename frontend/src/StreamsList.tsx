@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, Spin, Alert, Typography, Space, Button, Popconfirm, message, Modal } from 'antd';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiBaseUrl } from './config';
+import { getApiBaseUrl } from './config';
 
 interface StreamsResponse {
   streams: string[];
@@ -10,7 +10,7 @@ interface StreamsResponse {
 }
 
 const fetchStreams = async (): Promise<StreamsResponse> => {
-  const res = await fetch(`${apiBaseUrl}/list`);
+  const res = await fetch(`${getApiBaseUrl()}/list`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 };
@@ -25,7 +25,7 @@ export const StreamsList: React.FC = () => {
 
   const deleteMutation = useMutation<{ status: string; stream: string }, Error, string, { prev?: StreamsResponse }>({
     mutationFn: async (streamName: string) => {
-      const res = await fetch(`${apiBaseUrl}/stream`, {
+      const res = await fetch(`${getApiBaseUrl()}/stream`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ streamName }),

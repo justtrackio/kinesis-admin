@@ -30,9 +30,11 @@ Kinesis Admin is a web UI designed to manage AWS Kinesis data streams across mul
 
 ## Configuration
 
-The application's configuration is primarily managed through the `config.dist.yml` file. This file is embedded into the Go binary and provides default settings.
+### Backend Configuration
 
-### AWS Client Configuration
+The backend configuration is primarily managed through the `config.dist.yml` file. This file is embedded into the Go binary and provides default settings.
+
+#### AWS Client Configuration
 
 For local development, the application is pre-configured to use [LocalStack](https://docs.localstack.cloud/) as the AWS endpoint. The relevant configuration in `config.dist.yml` is:
 
@@ -51,7 +53,7 @@ cloud:
 *   `region`: Sets the AWS region for LocalStack.
 *   `access_key_id` and `secret_access_key`: Dummy credentials for LocalStack.
 
-### Overriding Configuration
+#### Overriding Backend Configuration
 
 You can override these default configurations using several methods provided by the Gosoline framework:
 
@@ -60,6 +62,26 @@ You can override these default configurations using several methods provided by 
 *   **Command Line Flags:** Configuration values can also be passed as command-line arguments.
 
 For more details on Gosoline's configuration system, refer to its official documentation.
+
+### Frontend Configuration
+
+The frontend API base URL can be configured **at runtime** without rebuilding. After building the frontend, edit `frontend/dist/config.json`:
+
+```json
+{
+  "apiBaseUrl": "https://api.example.com/api"
+}
+```
+
+In development mode, the config is loaded from `frontend/public/config.json` (defaults to `/api`, proxied by Vite to `http://localhost:8080`).
+
+**For Docker/Container Deployments:** Mount or replace the config file at runtime:
+
+```bash
+docker run -v ./my-config.json:/app/frontend/dist/config.json kinesis-admin
+```
+
+See `frontend/CONFIG.md` for detailed configuration instructions.
 
 ## Prerequisites
 
@@ -89,7 +111,7 @@ cd kinesis-admin
 
 ### 3. Backend Setup
 
-The backend serves the frontend static files.
+The backend API server runs independently from the frontend.
 
 ```bash
 # Install Go dependencies
@@ -99,11 +121,11 @@ go mod tidy
 go run main.go
 ```
 
-The backend will start on `http://localhost:8080`.
+The backend API will start on `http://localhost:8080`.
 
-### 4. Frontend Development (Optional, for development purposes)
+### 4. Frontend Development
 
-If you want to run the frontend in development mode with hot-reloading:
+For development with hot-reloading:
 
 ```bash
 cd frontend
@@ -115,11 +137,18 @@ bun install
 bun run dev
 ```
 
-The frontend development server will typically run on `http://localhost:5173` (or another available port). It will proxy API requests to the backend running on `http://localhost:8080`.
+The frontend development server will run on `http://localhost:5173` and proxy API requests to `http://localhost:8080`.
 
 ## Building and Running with Docker
 
-You can build and run the entire application as a single Docker container.
+The Docker image uses a multi-stage build with Caddy serving the frontend and proxying API requests to the Go backend.
+
+### Architecture
+
+- **Caddy (port 8080)**: Serves frontend static files and proxies `/api/*` requests to the backend
+- **Go Backend (port 8081)**: Handles Kinesis API operations
+- Frontend static files are served from `/var/www/html`
+- Runtime configuration can be customized by mounting `config.json`
 
 ### 1. Build the Docker Image
 
@@ -133,7 +162,24 @@ docker build -t kinesis-admin .
 docker run -p 8080:8080 kinesis-admin
 ```
 
-The application will be accessible in your browser at `http://localhost:8080`.
+The application will be accessible at `http://localhost:8080`.
+
+### 3. Custom Configuration
+
+Mount a custom `config.json` to configure the API base URL at runtime:
+
+```bash
+docker run -p 8080:8080 \
+  -v $(pwd)/custom-config.json:/app/frontend/dist/config.json \
+  kinesis-admin
+```
+
+Example `custom-config.json`:
+```json
+{
+  "apiBaseUrl": "/api"
+}
+```
 
 ## API Endpoints
 

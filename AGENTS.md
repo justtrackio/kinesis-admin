@@ -1,6 +1,7 @@
 # AGENTS SPECIFICATION
 
 Generated: 2025-11-13T21:40:12.241Z
+Last Updated: 2025-11-14T10:49:43.175Z
 
 ## Project Overview
 Kinesis Admin: Web UI to manage AWS Kinesis data streams across multiple accounts/regions. Frontend in React/TypeScript (Vite + Bun) using Ant Design. Backend (to be added) will expose a secure REST/GraphQL API proxying AWS SDK operations (Kinesis, CloudWatch Metrics, IAM, STS) with role assumption.
@@ -33,7 +34,7 @@ Kinesis Admin: Web UI to manage AWS Kinesis data streams across multiple account
 - API Port: 8080 (config.dist.yml api.port).
 - Handler: KinesisHandler (handler.go) constructed via NewKinesisHandler (creates gosoKinesis client with alias "default"); router wiring now resides directly in main.go (no separate router.go).
 - Endpoints:
-  - ${API_BASE_URL}/api/list (GET) returns paginated stream names aggregated via ListStreams; dev uses Vite proxy (/api), prod uses VITE_API_BASE_URL (default http://localhost:8080/api).
+  - ${API_BASE_URL}/api/list (GET) returns paginated stream names aggregated via ListStreams.
   - ${API_BASE_URL}/api/stream (DELETE, body {"streamName":"name"}) deletes a stream via DeleteStream (frontend Table action uses react-query mutation). Fallback endpoint: POST ${API_BASE_URL}/api/stream/delete for environments where DELETE routing fails.
   - ${API_BASE_URL}/api/stream/describe?streamName=name (GET) returns metadata via DescribeStream.
   - ${API_BASE_URL}/api/stream/messages?streamName=name&limit=N (GET) returns recent messages (LATEST iterator per shard).
@@ -43,6 +44,13 @@ Kinesis Admin: Web UI to manage AWS Kinesis data streams across multiple account
 - Observability: Use gosoline logging/metrics; add tracing later.
 - Deployment: build single binary; target ECS Fargate or Lambda.
 - Next Steps: pagination & region/account selection via query params; extend Stream Overview with shards list & metrics (currently uses /api/stream/describe and /api/stream/messages auto-refresh).
+
+## Frontend Configuration
+- Runtime config: API base URL loaded from /config.json (public/config.json in dev, dist/config.json after build).
+- Dev mode: Vite proxies /api to backend (http://localhost:8080 or VITE_API_BASE_URL env var).
+- Prod mode: Edit dist/config.json after build to configure apiBaseUrl (e.g., {"apiBaseUrl": "https://api.example.com/api"}) - no rebuild required.
+- Config loading: main.tsx calls loadConfig() before rendering; components use getApiBaseUrl() from config.ts.
+- Deployment: Mount or replace dist/config.json at runtime for Docker/K8s deployments.
 
 ## Security & Constraints
 - Never expose long-term AWS credentials to frontend.
@@ -64,7 +72,7 @@ Kinesis Admin: Web UI to manage AWS Kinesis data streams across multiple account
 - E2E: Playwright for critical flows (list streams, put record, scale stream).
 
 ## Deployment (Future)
-- Frontend: Served by the backend.
+- Frontend: Served by Caddy web server (in Docker) or can be deployed to CDN/S3.
 - Backend: AWS Lambda (API Gateway) or container (ECS/Fargate) behind ALB; prefer Lambda for simplicity.
 
 ## Agent Usage Guidelines
@@ -75,11 +83,13 @@ Kinesis Admin: Web UI to manage AWS Kinesis data streams across multiple account
 - Keep functions pure; isolate AWS shape types into a dedicated types.ts when introduced.
 - Always return an error from handlers on failure using fmt.Errorf; never swallow or skip shard errors (abort immediately) (added 2025-11-13T19:41:48.843Z, updated 2025-11-13T20:08:52.465Z).
 - Update this file ONLY when architectural decisions change.
-- **New Features (Nov 13, 2025):**
+- **New Features (Nov 13-14, 2025):**
   - Added a "Publish Message" feature to the stream overview page.
   - Added a "Delete All Streams" feature to the stream list page.
   - Added a "Delete Stream" button to the stream overview page.
   - Messages are now decoded from Base64 in the stream overview page.
+  - Frontend API base URL now configurable at runtime via config.json (no rebuild required).
+  - Docker deployment now uses Caddy to serve frontend with backend on separate port (8081).
 
 ## Future Enhancements
 - WebSocket/SSE for real-time shard metrics.
